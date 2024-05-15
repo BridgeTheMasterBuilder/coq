@@ -493,6 +493,33 @@ Definition findex n s1 s2 :=
   | None => O
   end.
 
+(** *** Applying functions to the characters of a string *)
+
+Fixpoint map (f : ascii -> ascii) (s : string) : string :=
+  match s with
+  | EmptyString => EmptyString
+  | String c s' => String (f c) (map f s')
+  end.
+
+(** *** Boolean operations over strings *)
+
+Fixpoint forallb (f : ascii -> bool) (s : string) : bool :=
+  match s with
+  | EmptyString => true
+  | String c s' => f c && forallb f s'
+  end.
+
+(** *** Universal predicates over strings *)
+
+Inductive Forall (P : ascii -> Prop) : string -> Prop :=
+  | Forall_empty : Forall P EmptyString
+  | Forall_string : forall c s, P c -> Forall P s -> Forall P (String c s).
+
+Inductive Forall2 (R : ascii -> ascii -> Prop) : string -> string -> Prop :=
+  | Forall2_empty : Forall2 R EmptyString EmptyString
+  | Forall2_string : forall c c' s s',
+    R c c' -> Forall2 R s s' -> Forall2 R (String c s) (String c' s').
+
 (** *** Conversion to/from [list ascii] and [list byte] *)
 
 Fixpoint string_of_list_ascii (s : list ascii) : string
@@ -537,6 +564,14 @@ Proof.
   apply byte_of_ascii_of_byte.
 Qed.
 
+Lemma Forall_list_ascii_string_equiv : forall (P : ascii -> Prop) (s : string), List.Forall P (list_ascii_of_string s) <-> String.Forall P s.
+  split; (induction s; [| intros H; inversion H; subst]; constructor; auto).
+Qed.
+
+Lemma Forall2_list_ascii_string_equiv : forall (P : ascii -> Prop) (s : string), List.Forall P (list_ascii_of_string s) <-> String.Forall P s.
+  split; (induction s; [| intros H; inversion H; subst]; constructor; auto).
+Qed.
+
 (** *** Concrete syntax *)
 
 (**
@@ -557,3 +592,4 @@ End StringSyntax.
 
 Example HelloWorld := "	""Hello world!""
 ".
+
